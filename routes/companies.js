@@ -4,6 +4,9 @@ const express = require('express');
 //Boilerplate to join to the database file
 const db = require('../db');
 
+// APIError class
+const APIError = require('../errors');
+
 //router is an instance of the Router Class.
 const router = express.Router();
 
@@ -32,7 +35,6 @@ router.post('/', async function(req, res, next) {
     `,
       [code, name, description]
     );
-
     return res.json(results.rows);
   } catch (err) {
     return next(err);
@@ -53,6 +55,11 @@ router.put('/:code', async function(req, res, next) {
       `,
       [req.params.code, name, description]
     );
+
+    if (!result.rows.length) {
+      throw new APIError('Company already exists in the database.', 404);
+    }
+
     return res.json(result.rows[0]);
   } catch (err) {
     return next(err);
@@ -63,12 +70,14 @@ router.put('/:code', async function(req, res, next) {
 
 router.get('/:code', async function(req, res, next) {
   try {
-    const result = await db.query(
-      `
-      SELECT * FROM companies WHERE code = $1
-      `,
-      [req.params.code]
-    );
+    const result = await db.query(`SELECT * FROM companies WHERE code = $1`, [
+      req.params.code
+    ]);
+
+    if (!result.rows.length) {
+      throw new APIError('Company not found in the database.', 404);
+    }
+
     return res.json(result.rows[0]);
   } catch (err) {
     return next(err);
@@ -87,6 +96,11 @@ router.delete('/:code', async function(req, res, next) {
     `,
       [req.params.code]
     );
+
+    if (!result.rows.length) {
+      throw new APIError('Company not found in the database.', 404);
+    }
+
     return res.json({ message: 'Company deleted' });
   } catch (err) {
     return next(err);
