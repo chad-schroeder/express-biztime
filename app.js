@@ -3,12 +3,14 @@
 const express = require('express');
 const morgan = require('morgan');
 const companyRoutes = require('./routes/companies');
+const invoiceRoutes = require(`./routes/invoices`);
 
 const app = express();
 
 app.use(express.json());
 app.use(morgan('tiny'));
 app.use('/companies', companyRoutes);
+app.use('/invoices', invoiceRoutes);
 
 /** 404 handler */
 

@@ -4,11 +4,11 @@ const express = require('express');
 //Boilerplate to join to the database file
 const db = require('../db');
 
-// APIError class
-const APIError = require('../errors');
-
 //router is an instance of the Router Class.
 const router = express.Router();
+
+// APIError class
+const APIError = require('../errors');
 
 // Routing all home requests, returning all tables
 router.get('/', async function(req, res, next) {
@@ -68,21 +68,21 @@ router.put('/:code', async function(req, res, next) {
 
 /**  Get company **/
 
-router.get('/:code', async function(req, res, next) {
-  try {
-    const result = await db.query(`SELECT * FROM companies WHERE code = $1`, [
-      req.params.code
-    ]);
+// router.get('/:code', async function(req, res, next) {
+//   try {
+//     const result = await db.query(`SELECT * FROM companies WHERE code = $1`, [
+//       req.params.code
+//     ]);
 
-    if (!result.rows.length) {
-      throw new APIError('Company not found in the database.', 404);
-    }
+//     if (!result.rows.length) {
+//       throw new APIError('Company not found in the database.', 404);
+//     }
 
-    return res.json(result.rows[0]);
-  } catch (err) {
-    return next(err);
-  }
-});
+//     return res.json(result.rows[0]);
+//   } catch (err) {
+//     return next(err);
+//   }
+// });
 
 /** Delete company **/
 
@@ -102,6 +102,44 @@ router.delete('/:code', async function(req, res, next) {
     }
 
     return res.json({ message: 'Company deleted' });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.get('/:code', async function(req, res, next) {
+  try {
+    const result = await db.query(
+      `
+        SELECT * 
+        FROM companies c 
+        JOIN invoices i ON c.code = i.comp_code
+        WHERE c.code = $1`,
+      [req.params.code]
+    );
+
+    console.log(result.rows);
+
+    let { code, name, description } = result.rows[0];
+    let invoices = result.rows.map(r => {
+      return {
+        id: r.id,
+        comp_code: r.comp_code,
+        amt: r.amt,
+        paid: r.paid,
+        add_date: r.add_date,
+        paid_date: r.paid_date
+      };
+    });
+
+    return res.json({
+      company: {
+        code,
+        name,
+        description,
+        invoice: invoices
+      }
+    });
   } catch (err) {
     return next(err);
   }
